@@ -21,11 +21,11 @@ export const ASSET_MANAGER_ABI = [
     "function withdraw()"
 ];
 
-export const evmContractConditions: any = [
+export const getEvmContractConditions = (assetId: BigNumber): any => [
     {
         contractAddress: ASSET_MANAGER_ADDRESS,
         functionName: "hasPurchased",
-        functionParams: [":user", ":assetId"],
+        functionParams: [":userAddress", assetId.toString()],
         functionAbi: {
             type: "function",
             stateMutability: "view",
@@ -48,17 +48,10 @@ export interface IEncryptedData {
 }
 
 export const connectToLit = async () => {
-    // const customChainConfig = {
-    //     chainId: "bscTestnet",
-    //     rpcUrl: "https://bsc-testnet-rpc.publicnode.com",
-    //     chainName: "Binance Smart Chain Testnet"
-    // };
-
     const client = new LitNodeClient({
         alertWhenUnauthorized: false,
         litNetwork: "cayenne",
-        debug: true,
-        // customChains: [customChainConfig]
+        debug: true
     });
     await client.disconnect();
     await toast.promise(client.connect(), {

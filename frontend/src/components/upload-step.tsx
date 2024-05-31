@@ -3,7 +3,7 @@ import { Card, CardTitle } from "./shared-styles";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { useForm } from "react-hook-form";
 import styled from "styled-components";
-import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, evmContractConditions } from "../constants";
+import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions } from "../constants";
 import { BigNumber, Contract, providers, utils } from "ethers";
 import toast from "react-hot-toast";
 
@@ -77,6 +77,7 @@ export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data
 
     const uploadAndEncrypt = async (data: any) => {
         const file = data.file[0];
+        const assetId = generateRandomAssetId();
 
         // connect to lit protocol
         const client = await connectToLit();
@@ -87,14 +88,18 @@ export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data
 
         // encrypt the file
         const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
-            { evmContractConditions, file, chain: ASSET_MANAGER_CHAIN, authSig },
+            {
+                evmContractConditions: getEvmContractConditions(assetId),
+                file,
+                chain: ASSET_MANAGER_CHAIN,
+                authSig
+            },
             client
         );
 
         // Add the asset to the contract
         const provider = new providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
-        const assetId = generateRandomAssetId();
         const price = utils.parseEther("0.001");
         const assetManagerContract = new Contract(ASSET_MANAGER_ADDRESS, ASSET_MANAGER_ABI, signer);
         const tx = await assetManagerContract.registerAsset(assetId, price);
@@ -103,7 +108,6 @@ export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data
             { loading: "Writing asset id and price onchain", success: "Write successful", error: "ERROR" }
         );
 
-        console.log({ ciphertext, dataToEncryptHash });
         setEncryptionResult({ assetId, ciphertext, dataToEncryptHash });
     };
 

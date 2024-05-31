@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardTitle } from "./shared-styles";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, evmContractConditions } from "../constants";
+import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions } from "../constants";
 import styled from "styled-components";
 import { Contract, providers, utils } from "ethers";
 import toast from "react-hot-toast";
@@ -35,9 +35,6 @@ export const DownloadStep = (
         const signer = provider.getSigner();
         const assetManagerContract = new Contract(ASSET_MANAGER_ADDRESS, ASSET_MANAGER_ABI, signer);
 
-        console.log("LOGGING");
-        console.log(await signer.getAddress());
-        console.log(encryptedData!.assetId);
         const hasPurchased = await assetManagerContract.hasPurchasedAsset(
             await signer.getAddress(),
             encryptedData!.assetId
@@ -63,14 +60,10 @@ export const DownloadStep = (
         const nonce = await client.getLatestBlockhash();
         const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: ASSET_MANAGER_CHAIN, switchChain: true, nonce });
 
-        // update the condition adding the user address and the params
-        const conditionCopy = JSON.parse(JSON.stringify(evmContractConditions));
-        conditionCopy[0].functionParams = [connectedAddress, encryptedData?.assetId.toString()];
-
         // decrypt file
         const decryptedFile = await LitJsSdk.decryptToFile(
             {
-                evmContractConditions: conditionCopy,
+                evmContractConditions: getEvmContractConditions(encryptedData!.assetId),
                 ciphertext: encryptedData!.ciphertext,
                 dataToEncryptHash: encryptedData!.dataToEncryptHash,
                 authSig,

@@ -61,17 +61,25 @@ export const DownloadStep = (
         const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: ASSET_MANAGER_CHAIN, switchChain: true, nonce });
 
         // decrypt file
-        const decryptedFile = await LitJsSdk.decryptToFile(
-            {
-                evmContractConditions: getEvmContractConditions(encryptedData!.assetId),
-                ciphertext: encryptedData!.ciphertext,
-                dataToEncryptHash: encryptedData!.dataToEncryptHash,
-                authSig,
-                chain: ASSET_MANAGER_CHAIN,
-            },
-            client
-        );
-        downloadUint8Array(decryptedFile);
+        try {
+            const decryptedFile = await LitJsSdk.decryptToFile(
+                {
+                    evmContractConditions: getEvmContractConditions(encryptedData!.assetId),
+                    ciphertext: encryptedData!.ciphertext,
+                    dataToEncryptHash: encryptedData!.dataToEncryptHash,
+                    authSig,
+                    chain: ASSET_MANAGER_CHAIN,
+                },
+                client
+            );
+            downloadUint8Array(decryptedFile);
+        } catch (error) {
+            const text = JSON.stringify(error).includes("The access control condition check returned that you are not permitted to access this content")
+                ? "It seems you do not have access to this content. Did you purchase the asset?"
+                : "Something went wrong during the decryption";
+
+            toast.error(text);
+        }
     };
 
     const downloadUint8Array = (decryptedFile: Uint8Array) => {

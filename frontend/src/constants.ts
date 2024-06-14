@@ -1,5 +1,8 @@
 import { BigNumber } from "ethers";
 import toast from "react-hot-toast";
+import { LitNetwork } from "@lit-protocol/constants";
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
+import { EvmContractConditions, LitAbility } from "@lit-protocol/types";
 
 export const ASSET_MANAGER_CHAIN = "baseSepolia";
 export const ASSET_MANAGER_ADDRESS = "0x8f233919b9c78D00d5661576438b1018F41f9d35";
@@ -21,7 +24,7 @@ export const ASSET_MANAGER_ABI = [
     "function withdraw()"
 ];
 
-export const getEvmContractConditions = (assetId: BigNumber): any => [
+export const getEvmContractConditions = (assetId: BigNumber): EvmContractConditions => [
     {
         contractAddress: ASSET_MANAGER_ADDRESS,
         functionName: "hasPurchased",
@@ -47,10 +50,10 @@ export interface IEncryptedData {
     dataToEncryptHash: string;
 }
 
-export const connectToLit = async () => {
+export const connectToLit = async (): Promise<LitNodeClient> => {
     const client = new LitNodeClient({
         alertWhenUnauthorized: false,
-        litNetwork: "cayenne",
+        litNetwork: LitNetwork.Manzano,
         debug: true
     });
     await client.disconnect();

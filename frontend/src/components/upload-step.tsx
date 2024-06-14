@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Card, CardTitle } from "./shared-styles";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { useForm } from "react-hook-form";
@@ -68,12 +68,7 @@ const Button = styled.button`
 
 
 export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data: IEncryptedData) => void; }) => {
-    const {
-        register,
-        handleSubmit,
-        watch,
-        formState: { errors, isDirty, isValid, isSubmitting },
-    } = useForm();
+    const { register, handleSubmit, formState: { errors, isDirty, isValid, isSubmitting } } = useForm();
 
     const uploadAndEncrypt = async (data: any) => {
         const file = data.file[0];

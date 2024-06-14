@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardTitle } from "./shared-styles";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions } from "../constants";
+import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions, getSessionSig } from "../constants";
 import styled from "styled-components";
 import { Contract, providers, utils } from "ethers";
 import toast from "react-hot-toast";
@@ -56,9 +56,9 @@ export const DownloadStep = (
         // connect to lit protocol
         const client = await connectToLit();
 
-        // get the signature from the user
-        const nonce = await client.getLatestBlockhash();
-        const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: ASSET_MANAGER_CHAIN, switchChain: true, nonce });
+        // get the session signature
+        const sessionSigs = await getSessionSig(connectedAddress, client)
+        console.log("Session sig fetched");
 
         // decrypt file
         try {
@@ -67,7 +67,7 @@ export const DownloadStep = (
                     evmContractConditions: getEvmContractConditions(encryptedData!.assetId),
                     ciphertext: encryptedData!.ciphertext,
                     dataToEncryptHash: encryptedData!.dataToEncryptHash,
-                    authSig,
+                    sessionSigs,
                     chain: ASSET_MANAGER_CHAIN,
                 },
                 client

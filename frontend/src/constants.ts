@@ -1,8 +1,16 @@
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import toast from "react-hot-toast";
 import { LitNetwork } from "@lit-protocol/constants";
 import { LitNodeClient } from "@lit-protocol/lit-node-client";
 import { EvmContractConditions, LitAbility } from "@lit-protocol/types";
+import {
+    LitAccessControlConditionResource,
+    createSiweMessage,
+    generateAuthSig
+} from "@lit-protocol/auth-helpers";
+
+const ETHEREUM_PRIVATE_KEY = "4e8cba343369dde54860d32055d8271e26c7ad8e075eda6a83e1177d4f6a48af";
+const signer = new ethers.Wallet(ETHEREUM_PRIVATE_KEY);
 
 export const ASSET_MANAGER_CHAIN = "baseSepolia";
 export const ASSET_MANAGER_ADDRESS = "0x8f233919b9c78D00d5661576438b1018F41f9d35";
@@ -65,3 +73,26 @@ export const connectToLit = async (): Promise<LitNodeClient> => {
 
     return client;
 };
+
+export const getSessionSig = async (userAddress: string, client: LitNodeClient) =>
+    await client.getSessionSigs({
+        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // 24 hours
+        resourceAbilityRequests: [
+            {
+                resource: new LitAccessControlConditionResource("*"),
+                ability: LitAbility.AccessControlConditionDecryption
+            }
+        ],
+        authNeededCallback: async ({ uri, expiration, resourceAbilityRequests }) => {
+            const toSign = await createSiweMessage({
+                uri,
+                expiration,
+                resources: resourceAbilityRequests,
+                walletAddress: await signer.getAddress(),
+                nonce: await client.getLatestBlockhash(),
+                litNodeClient: client
+            });
+
+            return await generateAuthSig({ signer: signer, toSign });
+        }
+    });

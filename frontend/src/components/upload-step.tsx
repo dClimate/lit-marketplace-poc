@@ -3,7 +3,7 @@ import { Card, CardTitle } from "./shared-styles";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { useForm } from "react-hook-form";
 import styled from "styled-components";
-import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions } from "../constants";
+import { ASSET_MANAGER_ABI, ASSET_MANAGER_ADDRESS, IEncryptedData, ASSET_MANAGER_CHAIN, connectToLit, getEvmContractConditions, getSessionSig } from "../constants";
 import { BigNumber, Contract, providers, utils } from "ethers";
 import toast from "react-hot-toast";
 
@@ -77,9 +77,10 @@ export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data
         // connect to lit protocol
         const client = await connectToLit();
 
-        // get the signature from the user
-        const nonce = await client.getLatestBlockhash();
-        const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: ASSET_MANAGER_CHAIN, switchChain: true, nonce });
+        // get the session signature
+        const provider = new providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const sessionSigs = await getSessionSig(await signer.getAddress(), client);
 
         // encrypt the file
         const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
@@ -87,14 +88,13 @@ export const UploadStep = ({ setEncryptionResult }: { setEncryptionResult: (data
                 evmContractConditions: getEvmContractConditions(assetId),
                 file,
                 chain: ASSET_MANAGER_CHAIN,
-                authSig
+                sessionSigs
             },
             client
         );
 
         // Add the asset to the contract
-        const provider = new providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
+
         const price = utils.parseEther("0.001");
         const assetManagerContract = new Contract(ASSET_MANAGER_ADDRESS, ASSET_MANAGER_ABI, signer);
         const tx = await assetManagerContract.registerAsset(assetId, price);

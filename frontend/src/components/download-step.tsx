@@ -74,10 +74,17 @@ export const DownloadStep = (
             );
             downloadUint8Array(decryptedFile);
         } catch (error) {
-            const text = JSON.stringify(error).includes("The access control condition check returned that you are not permitted to access this content")
+            const stringifiedError = JSON.stringify(error);
+            const isAccessControlError = stringifiedError.includes("not permitted to access this content")
+            const isRateLimitError = !isAccessControlError && stringifiedError.includes("Rate limit exceeded")
+
+            const text = isAccessControlError
                 ? "It seems you do not have access to this content. Did you purchase the asset?"
+                : isRateLimitError
+                ? "Rate limit exceeded. Did you purchase the Capacity Credits?"
                 : "Something went wrong during the decryption";
 
+            console.log(stringifiedError);
             toast.error(text);
         }
     };
